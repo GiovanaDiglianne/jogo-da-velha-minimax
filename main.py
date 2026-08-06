@@ -1,58 +1,72 @@
 import time
-import os
-
 from agente_jogo_velha import melhor_jogada, verificar_vencedor, jogadas_disponiveis
 
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich.prompt import Prompt, IntPrompt
+from rich.text import Text
+
+console = Console()
+
 def limpar_tela():
-    os.system('cls' if os.name == 'nt' else 'clear')
+    console.clear()
 
 def imprimir_tabuleiro(tab):
-    print("\nTabuleiro Atual:")
+    table = Table(show_header=False, show_lines=True, border_style="bright_black")
+    
+    table.add_column(justify="center", width=5)
+    table.add_column(justify="center", width=5)
+    table.add_column(justify="center", width=5)
+
     for i in range(3):
         linha = []
         for j in range(3):
             indice = i * 3 + j
-
             if tab[indice] == ' ':
-                linha.append(str(indice + 1))
+                linha.append(f"[dim white]{indice + 1}[/dim white]")
+            elif tab[indice] == 'X':
+                linha.append("[bold red]X[/bold red]")
             else:
-                linha.append(tab[indice])
-        
-        print(f" {linha[0]} | {linha[1]} | {linha[2]} ")
-        if i < 2:
-            print("---+---+---")
-    print()
+                linha.append("[bold cyan]O[/bold cyan]")
+        table.add_row(*linha)
+    
+    painel = Panel(table, title="[bold green]Tabuleiro Atual[/bold green]", expand=False, border_style="green")
+    console.print(painel)
 
-def ler_jogada_humano(tab) -> int:
+def ler_jogada_humano(tab, jogador_atual) -> int:
     while True:
-        try:
-            escolha = int(input("Sua vez! Escolha uma posição (1-9): "))
-            indice = escolha - 1
-            
+        opcoes_disponiveis = [str(i + 1) for i in jogadas_disponiveis(tab)]
+        opcoes_formatadas = ", ".join(opcoes_disponiveis)
+        
+        texto_prompt = f"[bold yellow]Sua vez ({jogador_atual})![/bold yellow] Posições disponíveis ([cyan]{opcoes_formatadas}[/cyan])"
+        escolha = IntPrompt.ask(texto_prompt)
+        indice = escolha - 1
+        
+        if str(escolha) not in opcoes_disponiveis:
             if indice < 0 or indice > 8:
-                print("Posição inválida! Escolha um número de 1 a 9.")
-            elif indice not in jogadas_disponiveis(tab):
-                print("Essa casa já está ocupada! Escolha outra.")
+                console.print("[bold red]Erro:[/bold red] Posição inválida! Escolha um dos números listados.")
             else:
-                return indice
-        except ValueError:
-            print("Entrada inválida! Por favor, digite um número.")
+                console.print("[bold red]Erro:[/bold red] Essa casa já está ocupada! Escolha outra.")
+        else:
+            return indice
 
 def jogar():
     limpar_tela()
-    print("=======================================")
-    print("      JOGO DA VELHA - MINIMAX          ")
-    print("=======================================")
-    print("Escolha o modo de jogo:")
-    print("1. Você ('X') vs Agente IA ('O')")
-    print("2. Agente IA ('X') vs Você ('O')")
-    print("3. Agente IA ('X') vs Agente IA ('O')")
     
-    modo = ""
-    while modo not in ['1', '2', '3']:
-        modo = input("Digite a opção desejada (1, 2 ou 3): ")
+    titulo = Text("JOGO DA VELHA - MINIMAX", justify="center", style="bold magenta")
+    console.print(Panel(titulo, expand=False, border_style="magenta"))
+    
+    console.print("\n[bold]Escolha o modo de jogo:[/bold]")
+    console.print("1. Você ([bold red]'X'[/bold red]) vs Agente IA ([bold cyan]'O'[/bold cyan])")
+    console.print("2. Agente IA ([bold red]'X'[/bold red]) vs Você ([bold cyan]'O'[/bold cyan])")
+    console.print("3. Agente IA ([bold red]'X'[/bold red]) vs Agente IA ([bold cyan]'O'[/bold cyan])")
+    
+    modo = Prompt.ask("\n[bold]Digite a opção desejada[/bold]", choices=["1", "2", "3"])
 
-    # Configuração dos jogadores baseada no modo escolhido
+    usar_poda_input = Prompt.ask("\n[bold]Deseja utilizar a Poda Alfa-Beta na IA?[/bold]", choices=["s", "n"], default="s")
+    usar_poda = (usar_poda_input == 's')
+
     jogador_X_is_ia = False
     jogador_O_is_ia = False
 
@@ -64,27 +78,38 @@ def jogar():
         jogador_X_is_ia = True
         jogador_O_is_ia = True
 
-    # Inicia o tabuleiro vazio
     tabuleiro = [' '] * 9
     jogador_atual = 'X'
     
     while True:
         limpar_tela()
-        print(f"Modo escolhido: Opção {modo}")
+        status_poda = "[bold green]Ativada[/bold green]" if usar_poda else "[bold red]Desativada[/bold red]"
+        console.print(f"[bold]Modo:[/bold] Opção {modo} | [bold]Poda Alfa-Beta:[/bold] {status_poda}\n")
+        
         imprimir_tabuleiro(tabuleiro)
         
         is_ia_turn = (jogador_atual == 'X' and jogador_X_is_ia) or \
                      (jogador_atual == 'O' and jogador_O_is_ia)
         
+        cor_jogador = "[bold red]" if jogador_atual == 'X' else "[bold cyan]"
+        
         if is_ia_turn:
-            print(f"Agente IA ({jogador_atual}) está " + ("pensando..." if modo != '3' else "calculando..."))
-            if modo == '3':
-                time.sleep(1)
+            acao = "pensando" if modo != '3' else "calculando"
+            console.print(f"{cor_jogador}Agente IA ({jogador_atual})[/] está {acao}...")
             
-            jogada = melhor_jogada(tabuleiro, jogador_atual)
+            tempo_inicio = time.perf_counter()
+            jogada = melhor_jogada(tabuleiro, jogador_atual, usar_poda)
+            tempo_fim = time.perf_counter()
+            
+            tempo_gasto = tempo_fim - tempo_inicio
+            console.print(f"⏱️  Tempo de cálculo: [bold yellow]{tempo_gasto:.4f}[/bold yellow] segundos")
+            
+            if modo == '3':
+                time.sleep(2.5)
+            else:
+                time.sleep(2.5)
         else:
-            print(f"Vez do Humano ({jogador_atual})")
-            jogada = ler_jogada_humano(tabuleiro)
+            jogada = ler_jogada_humano(tabuleiro, jogador_atual)
 
         tabuleiro[jogada] = jogador_atual
 
@@ -92,23 +117,20 @@ def jogar():
         if resultado is not None:
             limpar_tela()
             imprimir_tabuleiro(tabuleiro)
-            print("=======================================")
+            console.print("\n" + "="*40)
             if resultado == 'Empate':
-                print("O jogo terminou em EMPATE!")
+                console.print("[bold yellow]🤝 O jogo terminou em EMPATE![/bold yellow]")
             else:
-                print(f"Temos um vencedor: JOGADOR '{resultado}'!")
-            print("=======================================")
+                cor_vencedor = "red" if resultado == 'X' else "cyan"
+                console.print(f"[bold {cor_vencedor}]🏆 Temos um vencedor: JOGADOR '{resultado}'![/]")
+            console.print("="*40 + "\n")
             break
 
         jogador_atual = 'O' if jogador_atual == 'X' else 'X'
 
-
-
-
-# Executa jogo
 while True:
     jogar()
-    jogar_novamente = input("\nDeseja jogar novamente? (s/n): ").strip().lower()
+    jogar_novamente = Prompt.ask("[bold]Deseja jogar novamente?[/bold]", choices=["s", "n"], default="s")
     if jogar_novamente != 's':
-        print("Obrigado por jogar! Encerrando...")
+        console.print("[bold magenta]Obrigado por jogar! Encerrando...[/bold magenta]")
         break
