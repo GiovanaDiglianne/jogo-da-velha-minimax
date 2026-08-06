@@ -1,4 +1,5 @@
 import time
+
 from agente_jogo_velha import melhor_jogada, verificar_vencedor, jogadas_disponiveis
 
 from rich.console import Console
@@ -13,16 +14,20 @@ def limpar_tela():
     console.clear()
 
 def imprimir_tabuleiro(tab):
+    # Cria estrutura da tabela
     table = Table(show_header=False, show_lines=True, border_style="bright_black")
     
     table.add_column(justify="center", width=5)
     table.add_column(justify="center", width=5)
     table.add_column(justify="center", width=5)
 
+    # Preenche a tabela iterando sobre as linhas e colunas
     for i in range(3):
         linha = []
         for j in range(3):
             indice = i * 3 + j
+            
+            # Formata a o jogo da velha baseado na ocupação da casa
             if tab[indice] == ' ':
                 linha.append(f"[dim white]{indice + 1}[/dim white]")
             elif tab[indice] == 'X':
@@ -43,6 +48,7 @@ def ler_jogada_humano(tab, jogador_atual) -> int:
         escolha = IntPrompt.ask(texto_prompt)
         indice = escolha - 1
         
+        # Valida se a escolha do usuário está entre as opções mapeadas
         if str(escolha) not in opcoes_disponiveis:
             if indice < 0 or indice > 8:
                 console.print("[bold red]Erro:[/bold red] Posição inválida! Escolha um dos números listados.")
@@ -57,6 +63,7 @@ def jogar():
     titulo = Text("JOGO DA VELHA - MINIMAX", justify="center", style="bold magenta")
     console.print(Panel(titulo, expand=False, border_style="magenta"))
     
+    # Menu de seleção dos modos
     console.print("\n[bold]Escolha o modo de jogo:[/bold]")
     console.print("1. Você ([bold red]'X'[/bold red]) vs Agente IA ([bold cyan]'O'[/bold cyan])")
     console.print("2. Agente IA ([bold red]'X'[/bold red]) vs Você ([bold cyan]'O'[/bold cyan])")
@@ -67,6 +74,7 @@ def jogar():
     usar_poda_input = Prompt.ask("\n[bold]Deseja utilizar a Poda Alfa-Beta na IA?[/bold]", choices=["s", "n"], default="s")
     usar_poda = (usar_poda_input == 's')
 
+    # Configuração dos jogadores com base no modo selecionado
     jogador_X_is_ia = False
     jogador_O_is_ia = False
 
@@ -81,6 +89,7 @@ def jogar():
     tabuleiro = [' '] * 9
     jogador_atual = 'X'
     
+    # Turnos da partida
     while True:
         limpar_tela()
         status_poda = "[bold green]Ativada[/bold green]" if usar_poda else "[bold red]Desativada[/bold red]"
@@ -88,15 +97,18 @@ def jogar():
         
         imprimir_tabuleiro(tabuleiro)
         
+        # Verifica se o turno atual pertence a um agente de IA
         is_ia_turn = (jogador_atual == 'X' and jogador_X_is_ia) or \
                      (jogador_atual == 'O' and jogador_O_is_ia)
         
         cor_jogador = "[bold red]" if jogador_atual == 'X' else "[bold cyan]"
         
         if is_ia_turn:
+            # Turno da Inteligência Artificial
             acao = "pensando" if modo != '3' else "calculando"
             console.print(f"{cor_jogador}Agente IA ({jogador_atual})[/] está {acao}...")
             
+            # Marca o tempo
             tempo_inicio = time.perf_counter()
             jogada = melhor_jogada(tabuleiro, jogador_atual, usar_poda)
             tempo_fim = time.perf_counter()
@@ -109,15 +121,19 @@ def jogar():
             else:
                 time.sleep(2.5)
         else:
+            # Turno do jogador humano
             jogada = ler_jogada_humano(tabuleiro, jogador_atual)
 
+        # Aplica a ação escolhida (IA ou Humano) no tabuleiro
         tabuleiro[jogada] = jogador_atual
 
+        # Verifica se o jogo chegou ao fim
         resultado = verificar_vencedor(tabuleiro)
         if resultado is not None:
             limpar_tela()
             imprimir_tabuleiro(tabuleiro)
             console.print("\n" + "="*40)
+            
             if resultado == 'Empate':
                 console.print("[bold yellow]🤝 O jogo terminou em EMPATE![/bold yellow]")
             else:
@@ -126,7 +142,9 @@ def jogar():
             console.print("="*40 + "\n")
             break
 
+        # Alternância de turnos
         jogador_atual = 'O' if jogador_atual == 'X' else 'X'
+
 
 while True:
     jogar()
