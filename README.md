@@ -1,8 +1,7 @@
 JOGO DA VELHA COM IA (MINIMAX E PODA ALFA-BETA)
 ​Documentacao do projeto de Inteligencia Artificial para o jogo da velha imbativel.
-​=============================================
+​
 ​RECURSOS PRINCIPAIS
-=============================================
 
 ​Agente Imbatível: Garantia matemática de vitória ou empate em qualquer cenário de jogo.
 
@@ -17,13 +16,9 @@ JOGO DA VELHA COM IA (MINIMAX E PODA ALFA-BETA)
 
 ​Bateria de Testes Automatizada: Script de testes que simula exaustivamente todas as partidas possíveis para provar a invencibilidade do agente.
 
-​=============================================
-
 2. PRÉ-REQUISITOS
 ​Python 3.8 ou superior
 ​Gerenciador de pacotes pip
-
-​=============================================
 
 3. INSTALAÇÃO E CONFIGURAÇÃO
 
@@ -46,7 +41,6 @@ venv\Scripts\activate
 ​Passo 3: Instalar as dependências
 pip install rich
 
-​=============================================
 
 4. ESTRUTURA DO PROJETO
 
@@ -56,7 +50,7 @@ main.py              : Interface grafica no terminal (Rich) e loop principal
 
 README.md            : Documentacao do projeto
 
-​=============================================
+
 
 5. COMO EXECUTAR O JOGO
 
@@ -88,19 +82,20 @@ Agente jogando como 'O': 0 vitórias, 2364 empates, 0 derrotas (de 2364 partidas
 
 ​Teste OK: o agente nunca perde, em nenhum cenário possível.
 
-​=============================================
 
 7. ESTRUTURA LÓGICA DO TABULEIRO
+   
 ​As posicoes para jogada correspondem aos numeros de 1 a 9:
+
 ​1 | 2 | 3
 ---+---+---
 4 | 5 | 6
 ---+---+---
 7 | 8 | 9
 
-​=============================================
 
-8. TECNOLOGIAS UTILIZADAS
+TECNOLOGIAS UTILIZADAS
+
 ​Linguagem: Python 3
 ​Interface CLI: Biblioteca Rich
 ​Algoritmos: Minimax com Poda Alfa-Beta
